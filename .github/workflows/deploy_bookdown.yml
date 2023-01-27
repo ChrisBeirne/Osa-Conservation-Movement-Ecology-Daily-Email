@@ -1,0 +1,134 @@
+- name: Send mail
+  uses: dawidd6/action-send-mail@v3
+  with:
+    # Specify connection via URL (replaces server_address, server_port, secure,
+    # username and password)
+    #
+    # Format:
+    #
+    #  * smtp://user:password@server:port
+    #  * smtp+starttls://user:password@server:port
+    connection_url: ${{secrets.MAIL_CONNECTION}}
+    # Required mail server address if not connection_url:
+    server_address: smtp.gmail.com
+    # Server port, default 25:
+    server_port: 465
+    # Optional whether this connection use TLS (default is true if server_port is 465)
+    secure: true
+    # Optional (recommended) mail server username:
+    username: ${{secrets.MAIL_USERNAME}}
+    # Optional (recommended) mail server password:
+    password: ${{secrets.MAIL_PASSWORD}}
+    # Required mail subject:
+    subject: Github Actions job result
+    # Required recipients' addresses:
+    to: obiwan@example.com,yoda@example.com
+    # Required sender full name (address can be skipped):
+    from: Luke Skywalker # <user@example.com>
+    # Optional plain body:
+    body: Build job of ${{github.repository}} completed successfully!
+    # Optional HTML body read from file:
+    html_body: file://README.html
+    # Optional carbon copy recipients:
+    cc: kyloren@example.com,leia@example.com
+    # Optional blind carbon copy recipients:
+    bcc: r2d2@example.com,hansolo@example.com
+    # Optional recipient of the email response:
+    reply_to: luke@example.com
+    # Optional Message ID this message is replying to:
+    in_reply_to: <random-luke@example.com>
+    # Optional unsigned/invalid certificates allowance:
+    ignore_cert: true
+    # Optional converting Markdown to HTML (set content_type to text/html too):
+    convert_markdown: true
+    # Optional attachments:
+    attachments: attachments.zip,git.diff,./dist/static/*.js
+    # Optional priority: 'high', 'normal' (default) or 'low'
+    priority: low
+
+
+
+# name: scheduleRenderbook
+# on:     
+#   push:
+#   schedule:     
+#      - cron: "10 * * * *"  
+# 
+# 
+# 
+# jobs:
+#   bookdown:
+#     name: Render-Book
+#     runs-on:   macos-11 # macos-latest # ubuntu-latest #  macos USES 10 TIMES THE MINUTES
+#     steps:
+#       - uses: actions/checkout@v2
+#       # More detail here, https://github.com/r-lib/actions
+#       # It's possible to define R and pandoc version if desired
+#       - uses: r-lib/actions/setup-r@v1
+#       - uses: r-lib/actions/setup-pandoc@v1
+#       - name: Install TinyTeX
+#         uses: r-lib/actions/setup-tinytex@v1
+#         env:
+#           # install full prebuilt version
+#           TINYTEX_INSTALLER: TinyTeX
+#       - name: Install rmarkdown
+#         run: Rscript -e 'install.packages(c("rmarkdown","bookdown"))'
+#       - name: Install rgdal
+#         run: Rscript -e "install.packages('rgdal', type='mac.binary')"  
+#       - name: Install units
+#         run: Rscript -e "install.packages('units')"
+#       - name: Install leaflet
+#         run: Rscript -e "install.packages('leaflet')"
+#       - name: Install move
+#         run: Rscript -e "install.packages('move')"
+#       - name: Install dplyr
+#         run: Rscript -e "install.packages('dplyr')"
+#       - name: Install sf
+#         run: Rscript -e "install.packages('sf')"
+#       - name: Install viridis
+#         run: Rscript -e "install.packages('viridis')"
+#       - name: Install kableExtra
+#         run: Rscript -e "install.packages('kableExtra')"
+#       - name: Install lubridate
+#         run: Rscript -e "install.packages('lubridate')"
+#       - name: Install plotly
+#         run: Rscript -e "install.packages('plotly')"
+#       - name: Install raster
+#         run: Rscript -e "install.packages('raster', type='mac.binary')"
+#       - name: Install googledrive
+#         run: Rscript -e "install.packages('googledrive')"
+#       - name: Install purrr
+#         run: Rscript -e "install.packages('purrr')"
+#       - name: Install readxl
+#         run: Rscript -e "install.packages('readxl')"
+#       - name: Render Book
+#         env: 
+#           GOOGLE_AUTHENTICATION_CREDENTIALS: ${{ secrets.GOOGLE_AUTHENTICATION_CREDENTIALS }}
+#           MOVEBANK_USERNAME: ${{ secrets.MOVEBANK_USERNAME }}
+#           MOVEBANK_PASSWORD: ${{ secrets.MOVEBANK_PASSWORD }}
+#         run: Rscript -e 'bookdown::render_book("index.Rmd")'
+#       - uses: actions/upload-artifact@v2
+#         with:
+#           name: _book
+#           path: _book/
+#   
+#   checkout-and-deploy:
+#    runs-on: ubuntu-latest
+#    needs: bookdown
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#      - name: Download artifact
+#        uses: actions/download-artifact@v2
+#        with:
+#          # Artifact name
+#          name: _book # optional
+#          # Destination path
+#          path: _book # optional
+#      - name: Deploy to GitHub Pages
+#        uses: Cecilapp/GitHub-Pages-deploy@v3
+#        env:
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#         build_dir: _book
+#         branch: gh-pages
