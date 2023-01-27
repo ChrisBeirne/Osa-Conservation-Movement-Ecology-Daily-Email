@@ -46,7 +46,7 @@ jobs:
       # - name: Install readxl
       #   run: Rscript -e "install.packages('readxl')"
       - name: Render Book
-        env:
+#        env:
 #          GOOGLE_AUTHENTICATION_CREDENTIALS: ${{ secrets.GOOGLE_AUTHENTICATION_CREDENTIALS }}
 #          MOVEBANK_USERNAME: ${{ secrets.MOVEBANK_USERNAME }}
 #          MOVEBANK_PASSWORD: ${{ secrets.MOVEBANK_PASSWORD }}
