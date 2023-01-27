@@ -130,7 +130,7 @@ tmp_col2 <- check_in_summary$last_battery_level
 tmp_col2[tmp_col>3800]<- 3799
 
 ncol(check_in_summary)
-check_in_summary[,c(1,2,3,5,6,7,13 )] %>%
+check_in_summary[,c(1,2,3,5,6,7,12 )] %>%
   kbl() %>%
   kable_styling()  %>%
     column_spec(4, color = "white",
