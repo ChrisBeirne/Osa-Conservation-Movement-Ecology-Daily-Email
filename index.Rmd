@@ -1,0 +1,18 @@
+---
+title: "Osa Conservation: Tracker Checker"
+
+author:
+  - Chris Beirne
+
+site: bookdown::test-bookdown
+output: bookdown::gitbook
+documentclass: book
+biblio-style: apalike
+link-citations: yes
+---
+
+# Tracker status checker
+
+This document summarize the movement locations for all active collars within Osa Conservation's `OC Vultures` project. 
+
+## Test over
