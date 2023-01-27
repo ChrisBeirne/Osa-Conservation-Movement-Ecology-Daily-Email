@@ -14,7 +14,7 @@ library(move)
 library(dplyr)
 library(leaflet)
 library(units)
-library(sf)
+#library(sf)
 library(viridis)
 library(kableExtra)
 library(lubridate)
@@ -45,14 +45,26 @@ t <- now("America/Costa_Rica")
 start_t <- t-as.difftime(14,units='days')
 
 
-dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+dat_mov <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_t)
 
 # all data
 #dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE)
 
 # Convery move stack to dataframe
-dat <- as.data.frame(dat)
+dat <- as.data.frame(dat_mov)
+
+# Last 24 hours
+dat_mov_24 <- dat_mov[dat_mov$timestamp > t-as.difftime(1,units='days'),]
+dat_24 <- as.data.frame(dat_mov_24)
+table(dat_24$local_identifier)
+
+dist_24<- distance(dat_mov_24)
+dist_24<- as.data.frame((sapply(dist_24,sum)))
+dist_24$name <- row.names(dist_24)
+colnames(dist_24)[1] <- "dist_km_last_24h"
+dist_24$dist_km_last_24h <- round(dist_24$dist_km_last_24h/1000,1)
+dist_24$name[dist_24$name=="Robin.Hood"] <- "Robin Hood"
 
 # Convert dat to costa rica time
 dat$timestamp <- with_tz(dat$timestamp, tzone = "America/Costa_Rica")
@@ -72,58 +84,53 @@ dat$country[dat$country==T] <- "peru"
 dat$country[dat$country==F] <- "costa_rica"
 #table(dat$country)
 
-
-
-# Costa rica
-
-# Convert to shapefiles
-dat <- dat[order(dat$animalName),]
-
-
-lfc <- do.call(st_sfc,
-              lapply(split(dat, dat$animalName),
-                     function(d){st_linestring(as.matrix(d[,c("location_long", "location_lat")]))}))
-dat_shp <- st_sf(data.frame(animalName=levels(factor(dat[,"animalName"])), geom=lfc))
-
-#
-#plot(dat$location_long[dat$country=="costa_rica"], dat$location_lat[dat$country=="costa_rica"])
-#plot(st_geometry(dat_shp), add=T)
-
-
-
-
-sp_dat <- dat[,c("animalName",    "country", "taxon_canonical_name" )]
-sp_dat <- sp_dat[duplicated(sp_dat)==F,]
-
-# add back in the metadata
-dat_shp  <- left_join(dat_shp,sp_dat)
-
 # Last location and time since present
 dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
 
 last_obs <- dat %>% group_by(animalName) %>% summarize(hours_since_fix=min(diff_time))
 
+last_dat <- dat %>% group_by(animalName) %>% filter(row_number()==n())
+
 last_sum  <- dat %>% 
-  group_by(animalName) %>%
+  group_by(local_identifier) %>%
   slice(which.max(timestamp))
 
+tmp <- last_sum[, c("local_identifier","taxon_canonical_name","country", "timestamp", "diff_time")]
+tmp <- left_join(tmp, last_dat[, c("local_identifier", "eobs_battery_voltage")])
 
-tmp <- last_sum[, c("animalName","taxon_canonical_name","country", "timestamp", "diff_time")]
+colnames(tmp)[colnames(tmp)=="local_identifier"] <- "name"
 colnames(tmp)[colnames(tmp)=="diff_time"] <- "time_since_checkin_h"
 colnames(tmp)[colnames(tmp)=="timestamp"] <- "last_timestamp"
+colnames(tmp)[colnames(tmp)=="eobs_battery_voltage"] <- "last_battery_level"
+
 check_in_summary <- tmp[order(tmp$country, tmp$time_since_checkin_h),]
 
+# add distance move last_24
+check_in_summary <- left_join(check_in_summary, dist_24)
+
+### Add additional data shown later
+check_in_summary$duration <- difftime(check_in_summary$last_timestamp, start_t, "days")
+
+### Total locations Mean eobs battery power, eobs accuracy
+tmp_sum <- dat %>% group_by(local_identifier) %>% summarise(total_obs=n(), mean_batt=mean(eobs_battery_voltage, na.rm=T), loc_accuracy=mean(eobs_horizontal_accuracy_estimate, na.rm=T))
+colnames(tmp_sum)[1] <- "name"
+
+check_in_summary <- left_join(check_in_summary, tmp_sum)
+check_in_summary$mean_locs_per_day <- round(check_in_summary$total_obs/as.numeric(check_in_summary$duration),0)
 
 ```
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. 
-
+Here is your automated summary of all the tracked animals which have checked in within the last 14 days:
 
 ```{r cars, echo=F}
 tmp_col <- check_in_summary$time_since_checkin_h
 tmp_col[tmp_col<12]<- 12
 
-check_in_summary[,c(1,2,3,5)] %>%
+tmp_col2 <- check_in_summary$last_battery_level
+tmp_col2[tmp_col>3800]<- 3799
+
+ncol(check_in_summary)
+check_in_summary[,c(1,2,3,5,6,7,13 )] %>%
   kbl() %>%
   kable_styling()  %>%
     column_spec(4, color = "white",
@@ -131,22 +138,12 @@ check_in_summary[,c(1,2,3,5)] %>%
                                       option="D", scale_from = c(12,120)))
 
 
-### Add additional data shown later
-check_in_summary$duration <- difftime(check_in_summary$last_timestamp, start_t, "days")
-
-### Total locations Mean eobs battery power, eobs accuracy
-tmp_sum <- dat %>% group_by(animalName) %>% summarise(total_obs=n(), mean_batt=mean(eobs_battery_voltage, na.rm=T), loc_accuracy=mean(eobs_horizontal_accuracy_estimate, na.rm=T))
-#colnames(dat)
-
-check_in_summary <- left_join(check_in_summary, tmp_sum)
-check_in_summary$locs_per_day <- check_in_summary$total_obs/as.numeric(check_in_summary$duration)
-
 ```
 
 Animals not seen for longer
 
 ```{r  c05, echo=F}
-tmp2 <- animals[!(animals$animalName %in% tmp$animalName),]
+tmp2 <- animals[!(animals$local_identifier %in% tmp$name),]
 tmp2$timestamp_end <- with_tz(tmp2$timestamp_end, tzone = "America/Costa_Rica")
 #str(tmp2)
 tmp2$days_since_check_in<- round(as.numeric(difftime(t, tmp2$timestamp_end, units="days")),1)
@@ -155,68 +152,10 @@ tmp2 <- tmp2[order(tmp2$days_since_check_in),]
 
 
 
-tmp2[, c("animalName", "timestamp_end", "days_since_check_in")] %>%
+tmp2[, c("local_identifier", "timestamp_end", "days_since_check_in")] %>%
   kbl() %>%
   kable_styling()
 
 ```
 
-Last 14 days:
-
-*Costa Rica*
-
-```{r, echo=F}
-tmp_cr <- dat[dat$country=="costa_rica",]
-tmp_cr_shp <- dat_shp[dat_shp$country=="costa_rica",]
-
-
-# First lets choose a category to colour
-tmp_cr[,"animalName"] <- factor(tmp_cr[,"animalName"])
-tmp_cr_shp$animalName <- factor(tmp_cr_shp$animalName)
-
-col.cat <- turbo(length(levels(tmp_cr[,"animalName"])))
-# Add it to the dataframe
-tmp_cr$colours <- col.cat[tmp_cr[,"animalName"]]
-tmp_cr_shp$colours <- col.cat[tmp_cr_shp$animalName]
-
-```
-
-We currently have `r length(unique(tmp_cr$animalName))` vultures transmitting data in Costa Rica:
-
-```{r, echo=F}
-# New map
-ids <- tmp_cr_shp$animalName
-i <- 1
-m <- leaflet() %>%
-  # Add a satellite image layer
-  addProviderTiles(providers$Stamen.TonerLite, group="Simple") %>%
-  addProviderTiles(providers$Esri.WorldImagery, group="Satellite") %>%
-  addProviderTiles(providers$OpenStreetMap.Mapnik, group="OS") #%>%     
-
-  for (i in seq(along=ids))
-    {
-      m <- m %>%
-        addPolylines(data = tmp_cr_shp[i,], color = tmp_cr_shp$colours[i], group = ids[i], weight=3,opacity=0.3)         %>%
-        addCircleMarkers(lng=tmp_cr$location_long[tmp_cr$animalName==ids[i]],
-                         lat=tmp_cr$location_lat[tmp_cr$animalName==ids[i]], 
-                         popup=paste(tmp_cr$timestamp[tmp_cr$animalName==ids[i]]),
-                         fillOpacity = 0.3, opacity = 0.5, radius=2, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F) %>%
-        addCircleMarkers(lng=last(tmp_cr$location_long[tmp_cr$animalName==ids[i]]),
-                         lat=last(tmp_cr$location_lat[tmp_cr$animalName==ids[i]]), 
-                         popup=paste(last(tmp_cr$timestamp[tmp_cr$animalName==ids[i]])),
-                         fillOpacity = 1, opacity = 1, radius=5, color = tmp_cr_shp$colours[i], group = ids[i], stroke=F)
-    }
-
-  m <- m %>%
-      addLegend(position= "topright", colors=tmp_cr_shp$colours, 
-                labels=ids ,opacity = 0.7, title = "Animals") %>%
-      addScaleBar(position="topleft", 
-                  options=scaleBarOptions(maxWidth = 100, metric = TRUE, imperial = FALSE, updateWhenIdle = TRUE)) %>%
-      addLayersControl(
-        baseGroups = c("OS", "Simple", "Satellite"),
-        overlayGroups = ids,
-        options = layersControlOptions(collapsed = FALSE)
-      ) 
-  
-m 
-```
+For the current locations of all animals see: [Osa Tracker Checker]<https://chrisbeirne.github.io/Osa-Conservation-Movement-Ecology-Daily-Report/>
