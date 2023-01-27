@@ -84,7 +84,7 @@ jobs:
           # Optional (recommended) mail server password:
           password: ${{secrets.MAIL_PASSWORD}}
           # Required mail subject:
-          subject: Github Actions job result
+          subject: Github Actions job result_test
           # Required recipients' addresses:
           to: chrisbeirne@osaconservation.org
           # Required sender full name (address can be skipped):
