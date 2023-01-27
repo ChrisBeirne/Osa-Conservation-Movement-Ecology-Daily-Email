@@ -16,7 +16,7 @@ jobs:
           # install full prebuilt version
           TINYTEX_INSTALLER: TinyTeX
       - name: Install rmarkdown
-        run: Rscript -e 'install.packages(c("rmarkdown","bookdown"))'
+        run: Rscript -e 'install.packages(c("rmarkdown"))'
       # - name: Install rgdal
       #   run: Rscript -e "install.packages('rgdal', type='mac.binary')"
       # - name: Install units
@@ -50,11 +50,11 @@ jobs:
 #          GOOGLE_AUTHENTICATION_CREDENTIALS: ${{ secrets.GOOGLE_AUTHENTICATION_CREDENTIALS }}
 #          MOVEBANK_USERNAME: ${{ secrets.MOVEBANK_USERNAME }}
 #          MOVEBANK_PASSWORD: ${{ secrets.MOVEBANK_PASSWORD }}
-        run: Rscript -e 'bookdown::render_book("index.Rmd")'
+        run: Rscript -e 'rmarkdown::render("index.Rmd", output_format="html")'
       - uses: actions/upload-artifact@v2
         with:
-          name: _book
-          path: _book/
+          name: index.html
+ #         path: _book/
 
 
 #  sending-email:
@@ -92,7 +92,7 @@ jobs:
           # Optional plain body:
           body: Build job of ${{github.repository}} completed successfully!
           # Optional HTML body read from file:
-          html_body: file://_book/index.html
+          html_body: file://index.html
           # Optional carbon copy recipients:
           cc: c.w.beirne@gmail.com
           # Optional blind carbon copy recipients:
