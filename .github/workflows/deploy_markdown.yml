@@ -50,7 +50,7 @@ jobs:
 #          GOOGLE_AUTHENTICATION_CREDENTIALS: ${{ secrets.GOOGLE_AUTHENTICATION_CREDENTIALS }}
 #          MOVEBANK_USERNAME: ${{ secrets.MOVEBANK_USERNAME }}
 #          MOVEBANK_PASSWORD: ${{ secrets.MOVEBANK_PASSWORD }}
-        run: Rscript -e 'rmarkdown::render("index.Rmd", output_format="html")'
+        run: Rscript -e 'rmarkdown::render("index.Rmd", output_format="html_document")'
       - uses: actions/upload-artifact@v2
         with:
           name: index.html
