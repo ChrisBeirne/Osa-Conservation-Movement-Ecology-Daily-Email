@@ -3,8 +3,8 @@ on: [push]
 jobs:
   bookdown:
     name: Render-Report-Send-Email
-    runs-on:   macos-11 # macos-latest # ubuntu-latest #  macos USES 10 TIMES THE MINUTES
-    steps:
+    runs-on: macos-11 # macos-latest # ubuntu-latest #  macos USES 10 TIMES THE MINUTES
+    steps: 
       - uses: actions/checkout@v2
       # More detail here, https://github.com/r-lib/actions
       # It's possible to define R and pandoc version if desired
@@ -19,22 +19,22 @@ jobs:
         run: Rscript -e 'install.packages(c("rmarkdown"))'
       - name: Install kableExtra
         run: Rscript -e "install.packages('kableExtra')"
-       - name: Install rgdal
-         run: Rscript -e "install.packages('rgdal', type='mac.binary')"
-       - name: Install units
-         run: Rscript -e "install.packages('units')"
-       - name: Install leaflet
-         run: Rscript -e "install.packages('leaflet')"
-       - name: Install move
-         run: Rscript -e "install.packages('move')"
-       - name: Install dplyr
-         run: Rscript -e "install.packages('dplyr')"
-       - name: Install sf
-         run: Rscript -e "install.packages('sf')"
-       - name: Install viridis
-         run: Rscript -e "install.packages('viridis')"
-       - name: Install lubridate
-         run: Rscript -e "install.packages('lubridate')"
+      - name: Install rgdal
+        run: Rscript -e "install.packages('rgdal', type='mac.binary')"
+      - name: Install units
+        run: Rscript -e "install.packages('units')"
+      - name: Install leaflet
+        run: Rscript -e "install.packages('leaflet')"
+      - name: Install move
+        run: Rscript -e "install.packages('move')"
+      - name: Install dplyr
+        run: Rscript -e "install.packages('dplyr')"
+      - name: Install sf
+        run: Rscript -e "install.packages('sf')"
+      - name: Install viridis
+        run: Rscript -e "install.packages('viridis')"
+      - name: Install lubridate
+        run: Rscript -e "install.packages('lubridate')"
       # - name: Install plotly
       #   run: Rscript -e "install.packages('plotly')"
       # - name: Install raster
@@ -46,10 +46,10 @@ jobs:
       # - name: Install readxl
       #   run: Rscript -e "install.packages('readxl')"
       - name: Render Book
-#        env:
-#          GOOGLE_AUTHENTICATION_CREDENTIALS: ${{ secrets.GOOGLE_AUTHENTICATION_CREDENTIALS }}
-#          MOVEBANK_USERNAME: ${{ secrets.MOVEBANK_USERNAME }}
-#          MOVEBANK_PASSWORD: ${{ secrets.MOVEBANK_PASSWORD }}
+        env:
+          GOOGLE_AUTHENTICATION_CREDENTIALS: ${{ secrets.GOOGLE_AUTHENTICATION_CREDENTIALS }}
+          MOVEBANK_USERNAME: ${{ secrets.MOVEBANK_USERNAME }}
+          MOVEBANK_PASSWORD: ${{ secrets.MOVEBANK_PASSWORD }}
         run: Rscript -e 'rmarkdown::render("index.Rmd")'
       - uses: actions/upload-artifact@v2
         with:
