@@ -31,8 +31,8 @@ jobs:
       #   run: Rscript -e "install.packages('sf')"
       # - name: Install viridis
       #   run: Rscript -e "install.packages('viridis')"
-      # - name: Install kableExtra
-      #   run: Rscript -e "install.packages('kableExtra')"
+       - name: Install kableExtra
+         run: Rscript -e "install.packages('kableExtra')"
       # - name: Install lubridate
       #   run: Rscript -e "install.packages('lubridate')"
       # - name: Install plotly
@@ -84,7 +84,7 @@ jobs:
           # Optional (recommended) mail server password:
           password: ${{secrets.MAIL_PASSWORD}}
           # Required mail subject:
-          subject: Github Actions job result_test2
+          subject: Github Actions job result_test3
           # Required recipients' addresses:
           to: chrisbeirne@osaconservation.org
           # Required sender full name (address can be skipped):

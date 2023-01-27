@@ -7,13 +7,18 @@ output: rmarkdown::html_vignette
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(kableExtra)
 ```
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. 
 
 
 ```{r cars, echo=F}
-summary(cars)
+summary(cars) %>%
+  kbl() %>%
+  kable_styling()  %>%
+    column_spec(2, color = "white",
+              background ="red")
 ```
 
 
