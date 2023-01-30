@@ -1,5 +1,8 @@
-name: GitHub Actions Demo
-on: [push]
+name: scheduleRenderbook
+on:     
+  push:
+  schedule:     
+     - cron: "15 16 * * *"  
 jobs:
   bookdown:
     name: Render-Report-Send-Email
@@ -84,7 +87,7 @@ jobs:
           # Optional (recommended) mail server password:
           password: ${{secrets.MAIL_PASSWORD}}
           # Required mail subject:
-          subject: Github Actions job result_test3
+          subject: Vulture Tag Status Update 
           # Required recipients' addresses:
           to: chrisbeirne@osaconservation.org
           # Required sender full name (address can be skipped):
@@ -94,7 +97,7 @@ jobs:
           # Optional HTML body read from file:
           html_body: file://index.html
           # Optional carbon copy recipients:
-          cc: c.w.beirne@gmail.com
+          cc: c.w.beirne@gmail.com #, eleanorflatt@osaconservation.org, maelisshoarau@osaconservation.org, andywhitworth@osaconservation.org, sarahwicks@osaconservation.org
           # Optional blind carbon copy recipients:
           #bcc: r2d2@example.com,hansolo@example.com
           # Optional recipient of the email response:
