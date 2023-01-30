@@ -131,7 +131,11 @@ tmp_col2[tmp_col>3800]<- 3799
 
 tmp_col3 <- check_in_summary$dist_km_last_24h
 # what to do with NA;s
+<<<<<<< HEAD
 tmp_col3[is.na(tmp_col3)] <- 100 
+=======
+tmp_col3[is.na(tmp_col3)] <- 100
+>>>>>>> 88e1412621c56f54ef4a2475a2ec95321990a4d5
 check_in_summary[,c(1,2,3,5,6,7,12 )] %>%
   kbl() %>%
   kable_styling() %>% 
