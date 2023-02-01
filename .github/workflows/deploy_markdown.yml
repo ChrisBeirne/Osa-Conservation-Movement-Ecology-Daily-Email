@@ -1,6 +1,6 @@
 name: scheduleRenderbook
 on:     
-  push:
+#  push:
   schedule:     
      - cron: "15 16 * * *"  
 jobs:
@@ -97,7 +97,7 @@ jobs:
           # Optional HTML body read from file:
           html_body: file://index.html
           # Optional carbon copy recipients:
-          cc: c.w.beirne@gmail.com, eleanorflatt@osaconservation.org, maelisshoarau@osaconservation.org, andywhitworth@osaconservation.org, sarahwicks@osaconservation.org, diegorolim@osaconservation.org 
+          cc: c.w.beirne@gmail.com, eleanorflatt@osaconservation.org, maelisshoarau@osaconservation.org, andywhitworth@osaconservation.org, sarahwicks@osaconservation.org, diegorolim@osaconservation.org, rachaelpovey@osaconservation.org, saracampos@osaconservation.org 
           # Optional blind carbon copy recipients:
           #bcc: r2d2@example.com,hansolo@example.com
           # Optional recipient of the email response:
