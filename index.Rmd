@@ -84,6 +84,12 @@ dat$country[dat$country==T] <- "peru"
 dat$country[dat$country==F] <- "costa_rica"
 #table(dat$country)
 
+# What speed is flying
+
+hist(dat$ground_speed)
+
+
+
 # Last location and time since present
 dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
 
@@ -94,8 +100,11 @@ last_dat <- dat %>% group_by(animalName) %>% filter(row_number()==n())
 last_sum  <- dat %>% 
   group_by(local_identifier) %>%
   slice(which.max(timestamp))
+last_sum$behaviour <- "roosting"
+last_sum$behaviour[last_sum$ground_speed>5 & is.na(last_sum$ground_speed)==F] <- "flying"
 
-tmp <- last_sum[, c("local_identifier","taxon_canonical_name","country", "timestamp", "diff_time")]
+
+tmp <- last_sum[, c("local_identifier","taxon_canonical_name","country", "timestamp", "diff_time", "behaviour")]
 tmp <- left_join(tmp, last_dat[, c("local_identifier", "eobs_battery_voltage")])
 
 colnames(tmp)[colnames(tmp)=="local_identifier"] <- "name"
@@ -130,15 +139,18 @@ tmp_col3 <- check_in_summary$dist_km_last_24h
 # what to do with NA;s
 tmp_col3[is.na(tmp_col3)] <- 100 
 
-check_in_summary[,c(1,2,3,5,6,7,12 )] %>%
+check_in_summary[,c("name","taxon_canonical_name","country","time_since_checkin_h","behaviour","dist_km_last_24h","mean_locs_per_day", "last_battery_level" )] %>%
   kbl() %>%
   kable_styling() %>% 
   column_spec (1:7,border_left = F, border_right = T) %>%
   column_spec(4, color = "white",
               background = spec_color(tmp_col, begin=0,end = 0.7, scale_from = c(12,72), direction=-1)) %>% 
-  column_spec(6, background = ifelse(tmp_col3>0.5, "white", "#fec44f"))
+  column_spec(6, background = ifelse(tmp_col3>0.5, "white", "#fec44f")) %>% 
+  column_spec(8, background = ifelse(tmp_col3<3600, "white", "#fec44f"))
 
 ```
+
+*Note* For the behavior column - we use ground speed >5 m/s to indicate that the bird was likely flying. 
 
 For the current locations of all animals see: [Osa Tracker Checker](https://chrisbeirne.github.io/Osa-Conservation-Movement-Ecology-Daily-Report/)
 
@@ -156,7 +168,7 @@ colnames(tmp2)[colnames(tmp2)=="local_identifier"] <- "name"
 tmp2[, c("name", "timestamp_end", "days_since_check_in")] %>%
   kbl(row.names = FALSE) %>%
   kable_styling() %>% 
-  column_spec (1:3,border_left = F, border_right = T)
+  column_spec (1:3,border_left = F, border_right = T) 
 
 ```
 
