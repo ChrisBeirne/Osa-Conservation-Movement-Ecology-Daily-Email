@@ -2,7 +2,7 @@ name: scheduleRenderbook
 on:     
 #  push:
   schedule:     
-     - cron: "15 16 * * *"  
+     - cron: "15 13 * * *"  
 jobs:
   bookdown:
     name: Render-Report-Send-Email
