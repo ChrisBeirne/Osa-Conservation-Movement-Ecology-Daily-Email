@@ -87,7 +87,7 @@ jobs:
           # Optional (recommended) mail server password:
           password: ${{secrets.MAIL_PASSWORD}}
           # Required mail subject:
-          subject: Vulture Tag Status Update 
+          subject: Osa GPS Device Status Update 
           # Required recipients' addresses:
           to: chrisbeirne@osaconservation.org
           # Required sender full name (address can be skipped):
@@ -97,7 +97,8 @@ jobs:
           # Optional HTML body read from file:
           html_body: file://index.html
           # Optional carbon copy recipients:
-          cc: c.w.beirne@gmail.com, eleanorflatt@osaconservation.org, maelisshoarau@osaconservation.org, andywhitworth@osaconservation.org, sarahwicks@osaconservation.org, diegorolim@osaconservation.org, rachaelpovey@osaconservation.org, saracampos@osaconservation.org 
+          cc: c.w.beirne@gmail.com, eleanorflatt@osaconservation.org, andywhitworth@osaconservation.org, sarahwicks@osaconservation.org, diegorolim@osaconservation.org, 
+          rachaelpovey@osaconservation.org, saracampos@osaconservation.org, etubelli528@gmail.com, peraltaguilar@gmail.com    
           # Optional blind carbon copy recipients:
           #bcc: r2d2@example.com,hansolo@example.com
           # Optional recipient of the email response:
