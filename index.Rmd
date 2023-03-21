@@ -32,34 +32,53 @@ MOVE_USE <- Sys.getenv("MOVEBANK_USERNAME")
 
 loginStored <- movebankLogin(username=MOVE_USE, 
                              password=MOVE_PASS)
-
 # Get animals
 animals <-getMovebankAnimals(study=1573471517,login=loginStored)
+
+# Ocelot
+tmp <-getMovebankAnimals(study=2526574641,login=loginStored)
+
+# Tapir
+tmp2 <- getMovebankAnimals(study=1954804459,login=loginStored)
+animals <- rbind(animals, tmp,tmp2)
+
+
+
 # For some reason they are duplicated
 animals[duplicated(animals)==F,]
 # They vary by the field "sensor_type_id"
-animals <- animals[animals$sensor_type_id==653,]
+animals <- animals[animals$sensor_type_id==653 & is.na(animals$sensor_type_id)==F,]
 
 # Get last 2 weeks
 t <- now("America/Costa_Rica")
 start_t <- t-as.difftime(14,units='days')
 
 
-dat_mov <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+mov_dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_t)
+
+#OCelot
+tmp <- getMovebankData(study=2526574641, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                       timestamp_start=start_t)
+
+#Tapir
+tmp2 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                       timestamp_start=start_t)
+
+mov_dat <- moveStack(mov_dat, tmp, tmp2)
 
 # all data
 #dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE)
 
 # Convery move stack to dataframe
-dat <- as.data.frame(dat_mov)
+dat <- as.data.frame(mov_dat)
 
 # Last 24 hours
-dat_mov_24 <- dat_mov[dat_mov$timestamp > t-as.difftime(1,units='days'),]
-dat_24 <- as.data.frame(dat_mov_24)
+mov_dat_24 <- mov_dat[mov_dat$timestamp > t-as.difftime(1,units='days'),]
+dat_24 <- as.data.frame(mov_dat_24)
 table(dat_24$local_identifier)
 
-dist_24<- distance(dat_mov_24)
+dist_24<- distance(mov_dat_24)
 dist_24<- as.data.frame((sapply(dist_24,sum)))
 dist_24$name <- row.names(dist_24)
 colnames(dist_24)[1] <- "dist_km_last_24h"
@@ -86,10 +105,6 @@ dat$country[dat$country==F] <- "costa_rica"
 
 # What speed is flying
 
-hist(dat$ground_speed)
-
-
-
 # Last location and time since present
 dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
 
@@ -100,9 +115,9 @@ last_dat <- dat %>% group_by(animalName) %>% filter(row_number()==n())
 last_sum  <- dat %>% 
   group_by(local_identifier) %>%
   slice(which.max(timestamp))
-last_sum$behaviour <- "roosting"
+last_sum$behaviour <- NA
 last_sum$behaviour[last_sum$ground_speed>5 & is.na(last_sum$ground_speed)==F] <- "flying"
-
+last_sum$behaviour[last_sum$ground_speed<5 & is.na(last_sum$ground_speed)==F] <- "roosting"
 
 tmp <- last_sum[, c("local_identifier","taxon_canonical_name","country", "timestamp", "diff_time", "behaviour")]
 tmp <- left_join(tmp, last_dat[, c("local_identifier", "eobs_battery_voltage")])
@@ -150,11 +165,11 @@ check_in_summary[,c("name","taxon_canonical_name","country","time_since_checkin_
 
 ```
 
-*Note* For the behavior column - we use ground speed >5 m/s to indicate that the bird was likely flying. 
+*Note* For the behavior column - we use ground speed >5 m/s to indicate that the bird was likely flying. Mammals automatically get NA. 
 
-For the current locations of all animals see: [Osa Tracker Checker](https://chrisbeirne.github.io/Osa-Conservation-Movement-Ecology-Daily-Report/)
+For the current locations of all animals see: [Osa Conservation Daily Report](https://chrisbeirne.github.io/Osa-Conservation-Movement-Ecology-Daily-Report/)
 
-Animals not seen for longer
+Tagged animals which have not checked in for >14 days:
 
 ```{r  c05, echo=F}
 tmp2 <- animals[!(animals$local_identifier %in% tmp$name),]
@@ -172,4 +187,4 @@ tmp2[, c("name", "timestamp_end", "days_since_check_in")] %>%
 
 ```
 
-For the current locations of all animals see: [Osa Tracker Checker](https://chrisbeirne.github.io/Osa-Conservation-Movement-Ecology-Daily-Report/)
+For the current locations of all animals see: [Osa Conservation Daily Report](https://chrisbeirne.github.io/Osa-Conservation-Movement-Ecology-Daily-Report/)
