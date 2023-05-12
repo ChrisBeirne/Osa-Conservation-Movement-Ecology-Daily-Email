@@ -98,6 +98,11 @@ dat$animalName <- sub('\\_.*', '', dat$animalName)
 dat$animalName <- paste0(dat$animalName, "_", sub('\\ .*', '', dat$taxon_canonical_name))
 animals$animalName <- paste0(sub('\\_.*', '', animals$animalName), "_", sub('\\ .*', '', animals$taxon_canonical_name))
 
+animals$timestamp_start <- ymd_hms(animals$timestamp_start)
+animals$timestamp_end <- ymd_hms(animals$timestamp_end)
+
+
+
 # Add a country column
 dat$country <- dat$location_lat<0
 dat$country[dat$country==T] <- "peru"
