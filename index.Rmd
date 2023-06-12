@@ -9,7 +9,7 @@ output: rmarkdown::html_vignette
 knitr::opts_chunk$set(echo = TRUE)
 library(kableExtra)
 
-library(rgdal)
+#library(rgdal)
 library(move)
 library(dplyr)
 library(leaflet)

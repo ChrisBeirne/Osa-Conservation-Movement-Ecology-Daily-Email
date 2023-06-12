@@ -22,8 +22,8 @@ jobs:
         run: Rscript -e 'install.packages(c("rmarkdown"))'
       - name: Install kableExtra
         run: Rscript -e "install.packages('kableExtra')"
-      - name: Install rgdal
-        run: Rscript -e "install.packages('rgdal', type='mac.binary')"
+      #- name: Install rgdal
+      #  run: Rscript -e "install.packages('rgdal', type='mac.binary')"
       - name: Install units
         run: Rscript -e "install.packages('units')"
       - name: Install leaflet
