@@ -163,11 +163,11 @@ if(length(tmp_check)>0)
   counter <- counter+1
 }
 
-tmp <- dat %>% 
+tmp2 <- dat %>% 
    group_by(local_identifier) %>% 
    slice(tail(row_number(), 100))
 
-tmp3 <- tmp %>% group_by(local_identifier) %>% summarize("max_distance"=max(distance, na.rm=T), "avg_distance"=mean(distance, na.rm=T), "distance"=sum(distance, na.rm=T))
+tmp3 <- tmp2 %>% group_by(local_identifier) %>% summarize("max_distance"=max(distance, na.rm=T), "avg_distance"=mean(distance, na.rm=T), "distance"=sum(distance, na.rm=T))
 
 tmp_check <- tmp3[tmp3$max_distance<100,]$local_identifier
 if(length(tmp_check)>0)
@@ -215,7 +215,7 @@ check_in_summary[,c("name","taxon_canonical_name","country","time_since_checkin_
               background = spec_color(tmp_col, begin=0,end = 0.7, scale_from = c(12,72), direction=-1)) %>% 
   column_spec(6, background = ifelse(tmp_col3>0.5, "white", "#fec44f")) %>% 
   column_spec(8, background = ifelse(tmp_col3<3600, "white", "#fec44f"))
-"#ff7777"
+
 ```
 
 *Note* For the behavior column - we use ground speed >5 m/s to indicate that the bird was likely flying. Mammals automatically get NA. 
