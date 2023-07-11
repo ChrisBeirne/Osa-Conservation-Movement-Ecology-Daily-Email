@@ -67,7 +67,8 @@ tmp2 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTi
                        timestamp_start=start_tapir)
 
 mov_dat <- moveStack(mov_dat, tmp, tmp2)
-
+# Add distance moved
+mov_dat$distance <- unlist(lapply(distance(mov_dat), c, NA))
 # all data
 #dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE)
 
@@ -148,7 +149,53 @@ colnames(tmp_sum)[1] <- "name"
 check_in_summary <- left_join(check_in_summary, tmp_sum)
 check_in_summary$mean_locs_per_day <- round(check_in_summary$total_obs/as.numeric(check_in_summary$duration),0)
 
+#### Tags to be checked
+
+
+warnings <- list()
+counter <- 1
+# Tags which have haven't checked in > 4 days, OR maximum distance moved between intervals < 100m for the last 100 fixes or total distance moved in last 100 fixes <5000m
+tmp_check  <- check_in_summary[check_in_summary$dist_km_last_24h<0.1 & is.na(check_in_summary$dist_km_last_24h)==F,]$name
+
+if(length(tmp_check)>0)
+{
+  warnings[[counter]] <- data.frame(name=tmp_check,reason="Last checkin >4 days")
+  counter <- counter+1
+}
+
+tmp <- dat %>% 
+   group_by(local_identifier) %>% 
+   slice(tail(row_number(), 100))
+
+tmp3 <- tmp %>% group_by(local_identifier) %>% summarize("max_distance"=max(distance, na.rm=T), "avg_distance"=mean(distance, na.rm=T), "distance"=sum(distance, na.rm=T))
+
+tmp_check <- tmp3[tmp3$max_distance<100,]$local_identifier
+if(length(tmp_check)>0)
+{
+  warnings[[counter]] <- data.frame(name=tmp_check,reason="Maximum movement step < 100m")
+  counter <- counter+1
+}
+
+tmp_check <- tmp3[tmp3$distance<5000,]$local_identifier
+
+if(length(tmp_check)>0)
+{
+  warnings[[counter]] <- data.frame(name=tmp_check,reason="Sum of movements low")
+  counter <- counter+1
+}
+
+warnings <- bind_rows(warnings)
 ```
+
+**DEATH ALERTS**
+The following list shows tags which have hit one of three criteria:
+
+They haven't reported data for > 4 days OR their maximum movement step is below 100m OR their sum of movements is very low: 
+
+`r if(nrow(warnings)>0){warnings %>% kbl() %>%  kable_styling() %>% column_spec(1:2, background = "#ff7777")}else{print("All tags functioning")}`
+
+
+**Tag summaries**
 
 Here is your automated summary of all the tracked animals which have checked in within the last 14 days:
 
@@ -168,7 +215,7 @@ check_in_summary[,c("name","taxon_canonical_name","country","time_since_checkin_
               background = spec_color(tmp_col, begin=0,end = 0.7, scale_from = c(12,72), direction=-1)) %>% 
   column_spec(6, background = ifelse(tmp_col3>0.5, "white", "#fec44f")) %>% 
   column_spec(8, background = ifelse(tmp_col3<3600, "white", "#fec44f"))
-
+"#ff7777"
 ```
 
 *Note* For the behavior column - we use ground speed >5 m/s to indicate that the bird was likely flying. Mammals automatically get NA. 
