@@ -154,7 +154,7 @@ check_in_summary$mean_locs_per_day <- round(check_in_summary$total_obs/as.numeri
 warnings <- list()
 counter <- 1
 # Tags which have haven't checked in > 4 days, OR maximum distance moved between intervals < 100m for the last 100 fixes or total distance moved in last 100 fixes <5000m
-tmp_check  <- check_in_summary[check_in_summary$dist_km_last_24h<0.1 & is.na(check_in_summary$dist_km_last_24h)==F,]$name
+tmp_check  <- check_in_summary[check_in_summary$time_since_checkin_h>96 & is.na(check_in_summary$dist_km_last_24h)==T,]$name
 
 if(length(tmp_check)>0)
 {
