@@ -182,7 +182,7 @@ tmp_check  <- check_in_summary[check_in_summary$time_since_checkin_h>(96*2) & is
 
 if(length(tmp_check)>0)
 {
-  check_in_concern[[1]] <- data.frame(name=tmp_check,reason="Last checkin >8 days")
+  check_in_concern[[1]] <- data.frame(name=tmp_check,reason="Last checkin > 8 days ago")
  
 }
 
@@ -203,7 +203,7 @@ tmp_check <- tmp3[tmp3$distance<5000,]$local_identifier
 
 if(length(tmp_check)>0)
 {
-  warnings[[counter]] <- data.frame(name=tmp_check,reason="Sum of movements low")
+  warnings[[counter]] <- data.frame(name=tmp_check,reason="Avg. movement step < 50m")
   counter <- counter+1
 }
 
@@ -215,10 +215,11 @@ check_in_concern <- bind_rows(check_in_concern)
 **DEATH ALERTS**
 The following list shows tags which have hit one of two criteria:
 
-Their maximum movement step is below 100m OR their sum of movements is very low: 
+In the last 100 locations the maximum movement step is below 100m OR the average movement steps is below 50 m: 
 
 `r if(nrow(warnings)>0){warnings %>% kbl() %>%  kable_styling() %>% column_spec(1:2, background = "#ff7777")}else{print("All tags functioning")}`
-
+ 
+**Check-in warning**
 The following tags have not checked in for >8 days (which may be a sign of an issue):
 
 `r if(nrow(check_in_concern)>0){check_in_concern %>% kbl() %>%  kable_styling() %>% column_spec(1:2, background = "#ff772250")}else{print("All tags functioning")}`
