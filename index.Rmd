@@ -218,11 +218,7 @@ The following list shows tags which have hit one of two criteria:
 In the last 100 locations the maximum movement step is below 100m OR the average movement steps is below 50 m: 
 
 `r if(nrow(warnings)>0){warnings %>% kbl() %>%  kable_styling() %>% column_spec(1:2, background = "#ff7777")}else{print("All tags functioning")}`
-<<<<<<< HEAD
- 
-=======
 
->>>>>>> 9c662e6c98fdc4329bdc60b482985eb1debe0344
 **Check-in warning**
 The following tags have not checked in for >8 days (which may be a sign of an issue):
 
