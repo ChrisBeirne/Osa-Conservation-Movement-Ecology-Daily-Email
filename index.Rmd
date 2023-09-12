@@ -45,10 +45,6 @@ tmp2 <- getMovebankAnimals(study=1954804459,login=loginStored)
 tmp3 <- getMovebankAnimals(study=2957292408,login=loginStored)
 
 
-animals <- rbind(animals, tmp,tmp2, tmp3)
-
-
-
 # For some reason they are duplicated
 animals[duplicated(animals)==F,]
 # They vary by the field "sensor_type_id"
@@ -270,3 +266,121 @@ tmp2[, c("name", "timestamp_end", "days_since_check_in")] %>%
 ```
 
 For the current locations of all animals see: [Osa Conservation Daily Report](https://chrisbeirne.github.io/Osa-Conservation-Movement-Ecology-Daily-Report/)
+
+**Ecuadorian Birds**
+
+```{r setup, include=FALSE}
+
+
+# Get animals
+ec_animals <-getMovebankAnimals(study=2885579493,login=loginStored)
+
+
+# They vary by the field "sensor_type_id"
+ec_animals <- ec_animals[ec_animals$sensor_type_id==653 & is.na(ec_animals$sensor_type_id)==F,]
+
+# Get last 2 weeks
+t <- now("America/Costa_Rica")
+start_t <- t-as.difftime(14,units='days')
+
+mov_dat <- getMovebankData(study=2885579493, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                       timestamp_start=start_t)
+
+# Add distance moved
+mov_dat$distance <- unlist(lapply(distance(mov_dat), c, NA))
+# all data
+#dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE)
+
+# Convert move stack to dataframe
+dat <- as.data.frame(mov_dat)
+
+# Last 24 hours
+mov_dat_24 <- mov_dat[mov_dat$timestamp > t-as.difftime(1,units='days'),]
+dat_24 <- as.data.frame(mov_dat_24)
+table(dat_24$local_identifier)
+
+dist_24<- distance(mov_dat_24)
+dist_24<- as.data.frame((sapply(dist_24,sum)))
+dist_24$name <- row.names(dist_24)
+colnames(dist_24)[1] <- "dist_km_last_24h"
+dist_24$dist_km_last_24h <- round(dist_24$dist_km_last_24h/1000,1)
+
+# Convert dat to Ecuador time
+dat$timestamp <- with_tz(dat$timestamp, tzone = "America/Guayaquil")
+
+# Add the location data
+dat <- left_join(dat, ec_animals[, c("tag_id", "animalName")])
+# Sort the names out
+
+dat$animalName <- sub('\\_.*', '', dat$animalName)
+# Add in the taxonomic group
+dat$animalName <- paste0(dat$animalName, "_", sub('\\ .*', '', dat$taxon_canonical_name))
+ec_animals$animalName <- paste0(sub('\\_.*', '', ec_animals$animalName), "_", sub('\\ .*', '', ec_animals$taxon_canonical_name))
+
+ec_animals$timestamp_start <- ymd_hms(ec_animals$timestamp_start)
+ec_animals$timestamp_end <- ymd_hms(ec_animals$timestamp_end)
+
+# Add a country column
+dat$country <- dat$location_lat<0
+dat$country[dat$country==T] <- "Ecuador"
+
+# What speed is flying
+
+# Last location and time since present
+dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
+
+last_obs <- dat %>% group_by(animalName) %>% summarize(hours_since_fix=min(diff_time))
+
+last_dat <- dat %>% group_by(animalName) %>% filter(row_number()==n())
+
+last_sum  <- dat %>% 
+  group_by(local_identifier) %>%
+  slice(which.max(timestamp))
+last_sum$behaviour <- NA
+last_sum$behaviour[last_sum$ground_speed>5 & is.na(last_sum$ground_speed)==F] <- "flying"
+last_sum$behaviour[last_sum$ground_speed<5 & is.na(last_sum$ground_speed)==F] <- "roosting"
+
+tmp <- last_sum[, c("local_identifier","taxon_canonical_name","country", "timestamp", "diff_time", "behaviour")]
+tmp <- left_join(tmp, last_dat[, c("local_identifier", "eobs_battery_voltage")])
+
+colnames(tmp)[colnames(tmp)=="local_identifier"] <- "name"
+colnames(tmp)[colnames(tmp)=="diff_time"] <- "time_since_checkin_h"
+colnames(tmp)[colnames(tmp)=="timestamp"] <- "last_timestamp"
+colnames(tmp)[colnames(tmp)=="eobs_battery_voltage"] <- "last_battery_level"
+
+check_in_summary <- tmp[order(tmp$country, tmp$time_since_checkin_h),]
+
+# add distance move last_24
+check_in_summary$dist_km_last_24h <- dist_24$dist_km_last_24h
+
+### Add additional data shown later
+check_in_summary$duration <- difftime(check_in_summary$last_timestamp, start_t, "days")
+
+### Total locations Mean eobs battery power, eobs accuracy
+tmp_sum <- dat %>% group_by(local_identifier) %>% summarise(total_obs=n(), mean_batt=mean(eobs_battery_voltage, na.rm=T), loc_accuracy=mean(eobs_horizontal_accuracy_estimate, na.rm=T))
+colnames(tmp_sum)[1] <- "name"
+
+check_in_summary <- left_join(check_in_summary, tmp_sum)
+check_in_summary$mean_locs_per_day <- round(check_in_summary$total_obs/as.numeric(check_in_summary$duration),0)
+
+```
+
+
+```{r cars, echo=F}
+tmp_col <- check_in_summary$time_since_checkin_h
+tmp_col[tmp_col<12]<- 12
+
+tmp_col3 <- check_in_summary$dist_km_last_24h
+# what to do with NA;s
+tmp_col3[is.na(tmp_col3)] <- 100 
+
+check_in_summary[,c("name","taxon_canonical_name","country","time_since_checkin_h","behaviour","dist_km_last_24h","mean_locs_per_day", "last_battery_level" )] %>%
+  kbl() %>%
+  kable_styling() %>% 
+  column_spec (1:7,border_left = F, border_right = T) %>%
+  column_spec(4, color = "white",
+              background = spec_color(tmp_col, begin=0,end = 0.7, scale_from = c(12,72), direction=-1)) %>% 
+  column_spec(6, background = ifelse(tmp_col3>0.5, "white", "#fec44f")) %>% 
+  column_spec(8, background = ifelse(tmp_col3<3600, "white", "#fec44f"))
+
+```
