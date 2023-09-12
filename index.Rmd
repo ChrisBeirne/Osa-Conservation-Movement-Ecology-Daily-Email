@@ -40,7 +40,12 @@ tmp <-getMovebankAnimals(study=2526574641,login=loginStored)
 
 # Tapir
 tmp2 <- getMovebankAnimals(study=1954804459,login=loginStored)
-animals <- rbind(animals, tmp,tmp2)
+
+# Carnivores
+tmp3 <- getMovebankAnimals(study=2957292408,login=loginStored)
+
+
+animals <- rbind(animals, tmp,tmp2, tmp3)
 
 
 
@@ -58,20 +63,25 @@ start_tapir <- t-as.difftime(48,units='days')
 mov_dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_t)
 
-#OCelot
-tmp <- getMovebankData(study=2526574641, login=loginStored,  removeDuplicatedTimestamps=TRUE)
+#Ocelot - REMOVED AS PROJECT IS DONE
+#tmp <- getMovebankData(study=2526574641, login=loginStored,  removeDuplicatedTimestamps=TRUE)
 
 #Tapir
 tmp2 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_tapir)
 
-mov_dat <- moveStack(mov_dat, tmp, tmp2)
+# Carnivores
+tmp3 <- getMovebankData(study=2957292408, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                       timestamp_start=start_tapir)
+
+
+mov_dat <- moveStack(mov_dat, tmp2, tmp3)
 # Add distance moved
 mov_dat$distance <- unlist(lapply(distance(mov_dat), c, NA))
 # all data
 #dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE)
 
-# Convery move stack to dataframe
+# Convert move stack to dataframe
 dat <- as.data.frame(mov_dat)
 
 # Last 24 hours
@@ -85,6 +95,19 @@ dist_24$name <- row.names(dist_24)
 colnames(dist_24)[1] <- "dist_km_last_24h"
 dist_24$dist_km_last_24h <- round(dist_24$dist_km_last_24h/1000,1)
 dist_24$name[dist_24$name=="Robin.Hood"] <- "Robin Hood"
+
+# Last 72 hours
+mov_dat_72 <- mov_dat[mov_dat$timestamp > t-as.difftime(3,units='days'),]
+dat_72 <- as.data.frame(mov_dat_72)
+tmp <- as.data.frame(table(dat_72$local_identifier))
+
+dist_72<- distance(mov_dat_72)
+dist_72<- as.data.frame((sapply(dist_72,sum)))
+dist_72$name <- row.names(dist_72)
+colnames(dist_72)[1] <- "dist_km_last_72h"
+dist_72$dist_km_last_72h <- round(dist_72$dist_km_last_72h/1000,1)
+# Filte rout individuals with only one record
+dist_72 <- dist_72[dist_72$name %in% tmp$Var1[tmp$Freq>10],]
 
 # Convert dat to costa rica time
 dat$timestamp <- with_tz(dat$timestamp, tzone = "America/Costa_Rica")
@@ -152,20 +175,21 @@ check_in_summary$mean_locs_per_day <- round(check_in_summary$total_obs/as.numeri
 
 
 warnings <- list()
+check_in_concern <- list()
 counter <- 1
-# Tags which have haven't checked in > 4 days, OR maximum distance moved between intervals < 100m for the last 100 fixes or total distance moved in last 100 fixes <5000m
-tmp_check  <- check_in_summary[check_in_summary$time_since_checkin_h>96 & is.na(check_in_summary$dist_km_last_24h)==T,]$name
+# Tags which have haven't checked in > 8 days, OR maximum distance moved between intervals < 100m for the last 100 fixes or total distance moved in last 100 fixes <5000m
+tmp_check  <- check_in_summary[check_in_summary$time_since_checkin_h>(96*2) & is.na(check_in_summary$dist_km_last_24h)==T,]$name
 
 if(length(tmp_check)>0)
 {
-  warnings[[counter]] <- data.frame(name=tmp_check,reason="Last checkin >4 days")
-  counter <- counter+1
+  check_in_concern[[1]] <- data.frame(name=tmp_check,reason="Last checkin >8 days")
+ 
 }
 
 tmp2 <- dat %>% 
    group_by(local_identifier) %>% 
    slice(tail(row_number(), 100))
-
+test <- tmp2[tmp2$local_identifier=="Ugalde",]
 tmp3 <- tmp2 %>% group_by(local_identifier) %>% summarize("max_distance"=max(distance, na.rm=T), "avg_distance"=mean(distance, na.rm=T), "distance"=sum(distance, na.rm=T))
 
 tmp_check <- tmp3[tmp3$max_distance<100,]$local_identifier
@@ -184,15 +208,20 @@ if(length(tmp_check)>0)
 }
 
 warnings <- bind_rows(warnings)
+check_in_concern <- bind_rows(check_in_concern)
+
 ```
 
 **DEATH ALERTS**
-The following list shows tags which have hit one of three criteria:
+The following list shows tags which have hit one of two criteria:
 
-They haven't reported data for > 4 days OR their maximum movement step is below 100m OR their sum of movements is very low: 
+Their maximum movement step is below 100m OR their sum of movements is very low: 
 
 `r if(nrow(warnings)>0){warnings %>% kbl() %>%  kable_styling() %>% column_spec(1:2, background = "#ff7777")}else{print("All tags functioning")}`
 
+The following tags have not checked in for >8 days (which may be a sign of an issue):
+
+`r if(nrow(check_in_concern)>0){check_in_concern %>% kbl() %>%  kable_styling() %>% column_spec(1:2, background = "#ff772250")}else{print("All tags functioning")}`
 
 **Tag summaries**
 
