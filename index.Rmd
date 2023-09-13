@@ -46,7 +46,7 @@ tmp3 <- getMovebankAnimals(study=2957292408,login=loginStored)
 
 
 # For some reason they are duplicated
-animals[duplicated(animals)==F,]
+# animals[duplicated(animals)==F,]
 # They vary by the field "sensor_type_id"
 animals <- animals[animals$sensor_type_id==653 & is.na(animals$sensor_type_id)==F,]
 
