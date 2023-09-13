@@ -44,6 +44,7 @@ tmp2 <- getMovebankAnimals(study=1954804459,login=loginStored)
 # Carnivores
 tmp3 <- getMovebankAnimals(study=2957292408,login=loginStored)
 
+animals <- rbind(animals, tmp,tmp2, tmp3)
 
 # For some reason they are duplicated
 # animals[duplicated(animals)==F,]
