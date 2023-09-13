@@ -270,7 +270,7 @@ For the current locations of all animals see: [Osa Conservation Daily Report](ht
 
 **Ecuadorian Birds**
 
-```{r setup, include=FALSE}
+```{r ecu1, include=FALSE}
 
 
 # Get animals
@@ -365,7 +365,7 @@ check_in_summary$mean_locs_per_day <- round(check_in_summary$total_obs/as.numeri
 ```
 
 
-```{r cars, echo=F}
+```{r ecu2, echo=F}
 tmp_col <- check_in_summary$time_since_checkin_h
 tmp_col[tmp_col<12]<- 12
 
