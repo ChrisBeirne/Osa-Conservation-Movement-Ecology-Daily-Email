@@ -71,8 +71,8 @@ tmp2 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTi
 tmp3 <- getMovebankData(study=2957292408, login=loginStored,  removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_tapir)
 
-
 mov_dat <- moveStack(mov_dat, tmp2, tmp3)
+
 # Add distance moved
 mov_dat$distance <- unlist(lapply(distance(mov_dat), c, NA))
 # all data
