@@ -274,7 +274,7 @@ For the current locations of all animals see: [Osa Conservation Daily Report](ht
 
 # Get animals
 ec_animals <-getMovebankAnimals(study=2885579493,login=loginStored)
-
+ec_animals$local_identifier <- ec_animals$nick_name
 
 # They vary by the field "sensor_type_id"
 ec_animals <- ec_animals[ec_animals$sensor_type_id==653 & is.na(ec_animals$sensor_type_id)==F,]
@@ -293,15 +293,18 @@ mov_dat$distance <- unlist(lapply(distance(mov_dat), c, NA))
 
 # Convert move stack to dataframe
 dat <- as.data.frame(mov_dat)
-
+dat$local_identifier <-  dat$nick_name
+table(dat$local_identifier)
 # Last 24 hours
 mov_dat_24 <- mov_dat[mov_dat$timestamp > t-as.difftime(1,units='days'),]
 dat_24 <- as.data.frame(mov_dat_24)
-table(dat_24$local_identifier)
+table(dat_24$nick_name)
 
 dist_24<- distance(mov_dat_24)
+names(dist_24) <- mov_dat_24@idData$nick_name
+#str(mov_dat_24)
 dist_24<- as.data.frame((sapply(dist_24,sum)))
-dist_24$name <- row.names(dist_24)
+dist_24$local_identifier <- row.names(dist_24)
 colnames(dist_24)[1] <- "dist_km_last_24h"
 dist_24$dist_km_last_24h <- round(dist_24$dist_km_last_24h/1000,1)
 
@@ -309,13 +312,8 @@ dist_24$dist_km_last_24h <- round(dist_24$dist_km_last_24h/1000,1)
 dat$timestamp <- with_tz(dat$timestamp, tzone = "America/Guayaquil")
 
 # Add the location data
-dat <- left_join(dat, ec_animals[, c("tag_id", "animalName")])
+dat <- left_join(dat, ec_animals[, c("tag_id", "local_identifier")])
 # Sort the names out
-
-dat$animalName <- sub('\\_.*', '', dat$animalName)
-# Add in the taxonomic group
-dat$animalName <- paste0(dat$animalName, "_", sub('\\ .*', '', dat$taxon_canonical_name))
-ec_animals$animalName <- paste0(sub('\\_.*', '', ec_animals$animalName), "_", sub('\\ .*', '', ec_animals$taxon_canonical_name))
 
 ec_animals$timestamp_start <- ymd_hms(ec_animals$timestamp_start)
 ec_animals$timestamp_end <- ymd_hms(ec_animals$timestamp_end)
@@ -329,9 +327,9 @@ dat$country[dat$country==T] <- "Ecuador"
 # Last location and time since present
 dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
 
-last_obs <- dat %>% group_by(animalName) %>% summarize(hours_since_fix=min(diff_time))
+last_obs <- dat %>% group_by(local_identifier) %>% summarize(hours_since_fix=min(diff_time))
 
-last_dat <- dat %>% group_by(animalName) %>% filter(row_number()==n())
+last_dat <- dat %>% group_by(local_identifier) %>% filter(row_number()==n())
 
 last_sum  <- dat %>% 
   group_by(local_identifier) %>%
@@ -351,7 +349,7 @@ colnames(tmp)[colnames(tmp)=="eobs_battery_voltage"] <- "last_battery_level"
 check_in_summary <- tmp[order(tmp$country, tmp$time_since_checkin_h),]
 
 # add distance move last_24
-check_in_summary$dist_km_last_24h <- dist_24$dist_km_last_24h
+check_in_summary <- left_join(check_in_summary, dist_24, by=c("name"="local_identifier"))
 
 ### Add additional data shown later
 check_in_summary$duration <- difftime(check_in_summary$last_timestamp, start_t, "days")
