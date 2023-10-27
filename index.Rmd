@@ -36,15 +36,18 @@ loginStored <- movebankLogin(username=MOVE_USE,
 animals <-getMovebankAnimals(study=1573471517,login=loginStored)
 
 # Ocelot
-tmp <-getMovebankAnimals(study=2526574641,login=loginStored)
+#tmp <-getMovebankAnimals(study=2526574641,login=loginStored)
 
 # Tapir
 tmp2 <- getMovebankAnimals(study=1954804459,login=loginStored)
 
 # Carnivores
-tmp3 <- getMovebankAnimals(study=2957292408,login=loginStored)
+#tmp3 <- getMovebankAnimals(study=2957292408,login=loginStored)
 
-animals <- rbind(animals, tmp,tmp2, tmp3)
+animals <- rbind(animals, #tmp,
+                 tmp2, 
+                 #tmp3
+                 )
 
 # For some reason they are duplicated
 # animals[duplicated(animals)==F,]
@@ -68,10 +71,12 @@ tmp2 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTi
                        timestamp_start=start_tapir)
 
 # Carnivores
-tmp3 <- getMovebankData(study=2957292408, login=loginStored,  removeDuplicatedTimestamps=TRUE,
-                       timestamp_start=start_tapir)
+#tmp3 <- getMovebankData(study=2957292408, login=loginStored,  #removeDuplicatedTimestamps=TRUE,
+#                       timestamp_start=start_tapir)
 
-mov_dat <- moveStack(mov_dat, tmp2, tmp3)
+mov_dat <- moveStack(mov_dat, 
+                     tmp2)#, 
+                     #tmp3)
 
 # Add distance moved
 mov_dat$distance <- unlist(lapply(distance(mov_dat), c, NA))
