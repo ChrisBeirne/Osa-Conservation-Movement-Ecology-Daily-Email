@@ -45,7 +45,7 @@ tmp2 <- getMovebankAnimals(study=1954804459,login=loginStored)
 #tmp3 <- getMovebankAnimals(study=2957292408,login=loginStored)
 
 animals <- rbind(animals, #tmp,
-                 tmp2, 
+                 tmp2 
                  #tmp3
                  )
 
