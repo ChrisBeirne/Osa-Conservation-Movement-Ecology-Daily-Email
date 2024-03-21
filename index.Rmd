@@ -24,7 +24,7 @@ library(lubridate)
 #library(purrr)
 #library(readxl)
 #options(googledrive_quiet = TRUE)
- 
+  
  
 # Import passcodes
 MOVE_PASS <- Sys.getenv("MOVEBANK_PASSWORD")
