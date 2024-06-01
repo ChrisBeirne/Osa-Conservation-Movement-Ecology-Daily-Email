@@ -2,11 +2,11 @@ name: scheduleRenderbook
 on:     
   push: 
   schedule:     
-     - cron: "14 13 * * *"  
+     - cron: "15 13 * * *"  
 jobs:
   bookdown:
     name: Render-Report-Send-Email
-    runs-on: macos-latest # ubuntu-latest #  macos USES 10 TIMES THE MINUTES
+    runs-on: macos-11 # macos-latest # ubuntu-latest #  macos USES 10 TIMES THE MINUTES
     steps: 
       - uses: actions/checkout@v2
       # More detail here, https://github.com/r-lib/actions
@@ -27,8 +27,13 @@ jobs:
       - name: Install units
         run: Rscript -e "install.packages('units')"
       - name: Install leaflet
+        run: Rscript -e "install.packages('leaflet')"
+      - name: Install move
+        run: Rscript -e "install.packages('move')"
       - name: Install dplyr
         run: Rscript -e "install.packages('dplyr')"
+      - name: Install sf
+        run: Rscript -e "install.packages('sf')"
       - name: Install viridis
         run: Rscript -e "install.packages('viridis')"
       - name: Install lubridate
@@ -37,8 +42,8 @@ jobs:
       #   run: Rscript -e "install.packages('plotly')"
       # - name: Install raster
       #   run: Rscript -e "install.packages('raster', type='mac.binary')"
-      - name: Install googledrive
-        run: Rscript -e "install.packages('googledrive')"
+      # - name: Install googledrive
+      #   run: Rscript -e "install.packages('googledrive')"
       # - name: Install purrr
       #   run: Rscript -e "install.packages('purrr')"
       # - name: Install readxl
@@ -46,6 +51,8 @@ jobs:
       - name: Render Book
         env:
           GOOGLE_AUTHENTICATION_CREDENTIALS: ${{ secrets.GOOGLE_AUTHENTICATION_CREDENTIALS }}
+          MOVEBANK_USERNAME: ${{ secrets.MOVEBANK_USERNAME }}
+          MOVEBANK_PASSWORD: ${{ secrets.MOVEBANK_PASSWORD }}
         run: Rscript -e 'rmarkdown::render("index.Rmd")'
       - uses: actions/upload-artifact@v2
         with:
@@ -80,7 +87,7 @@ jobs:
           # Optional (recommended) mail server password:
           password: ${{secrets.MAIL_PASSWORD}}
           # Required mail subject:
-          subject: Campus booking update 
+          subject: Osa GPS Device Status Update 
           # Required recipients' addresses:
           to: chrisbeirne@osaconservation.org
           # Required sender full name (address can be skipped):
@@ -90,7 +97,7 @@ jobs:
           # Optional HTML body read from file:
           html_body: file://index.html
           # Optional carbon copy recipients:
-          cc: c.w.beirne@gmail.com     
+          cc: c.w.beirne@gmail.com, andywhitworth@osaconservation.org, sarahwicks@osaconservation.org, diegorolim@osaconservation.org, saracampos@osaconservation.org, etubelli528@gmail.com, calebquispe@osaconservation.org, florperez@osaconservation.org, enzobasso@osaconservation.org, pacovega@osaconservation.org, violetamarie@osaconservation.org, rosiovega@osaconservation.org    
           # Optional blind carbon copy recipients:
           #bcc: r2d2@example.com,hansolo@example.com
           # Optional recipient of the email response:
