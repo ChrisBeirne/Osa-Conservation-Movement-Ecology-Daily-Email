@@ -44,11 +44,10 @@ tmp2 <- getMovebankAnimals(study=1954804459,login=loginStored)
 # Carnivores
 tmp3 <- getMovebankAnimals(study=2957292408,login=loginStored)
 
-animals <- rbind(animals, 
-                 #tmp, # OCelot project is done
-                 tmp2, 
-                 tmp3
-                 )
+                
+mammals <- rbind(tmp2, 
+                 tmp3)
+
 
 # For some reason they are duplicated
 # animals[duplicated(animals)==F,]
@@ -58,7 +57,8 @@ animals <- animals[animals$sensor_type_id==653 & is.na(animals$sensor_type_id)==
 # Get last 2 weeks
 t <- now("America/Costa_Rica")
 start_t <- t-as.difftime(14,units='days')
-start_tapir <- t-as.difftime(48,units='days')
+
+start_tapir <- t-as.difftime(42,units='days')
 
 
 mov_dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
@@ -75,14 +75,16 @@ tmp2 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTi
 tmp3 <- getMovebankData(study=2957292408, login=loginStored,  #removeDuplicatedTimestamps=TRUE,
                        timestamp_start=start_tapir)
 
-mov_dat <- moveStack(mov_dat, 
-                     tmp2, 
+mov_dat <- moveStack(mov_dat)
+
+mammal_dat <- moveStack(tmp2, 
                      tmp3)
+
+
+# VULTURES 
 
 # Add distance moved
 mov_dat$distance <- unlist(lapply(distance(mov_dat), c, NA))
-# all data
-#dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE)
 
 # Convert move stack to dataframe
 dat <- as.data.frame(mov_dat)
@@ -161,8 +163,13 @@ colnames(tmp)[colnames(tmp)=="eobs_battery_voltage"] <- "last_battery_level"
 
 check_in_summary <- tmp[order(tmp$country, tmp$time_since_checkin_h),]
 
+
+
+
+
+
 # add distance move last_24
-check_in_summary <- left_join(check_in_summary, dist_24)
+check_in_summary <- left_join(check_in_summary, dist_72)
 
 ### Add additional data shown later
 check_in_summary$duration <- difftime(check_in_summary$last_timestamp, start_t, "days")
@@ -181,7 +188,7 @@ warnings <- list()
 check_in_concern <- list()
 counter <- 1
 # Tags which have haven't checked in > 8 days, OR maximum distance moved between intervals < 100m for the last 100 fixes or total distance moved in last 100 fixes <5000m
-tmp_check  <- check_in_summary[check_in_summary$time_since_checkin_h>(96*2) & is.na(check_in_summary$dist_km_last_24h)==T,]$name
+tmp_check  <- check_in_summary[check_in_summary$time_since_checkin_h>(96*2) & is.na(check_in_summary$dist_km_last_72h)==T & check_in_summary$total_obs>10,]$name
 
 if(length(tmp_check)>0)
 {
@@ -193,16 +200,16 @@ tmp2 <- dat %>%
    group_by(local_identifier) %>% 
    slice(tail(row_number(), 100))
 test <- tmp2[tmp2$local_identifier=="Ugalde",]
-tmp3 <- tmp2 %>% group_by(local_identifier) %>% summarize("max_distance"=max(distance, na.rm=T), "avg_distance"=mean(distance, na.rm=T), "distance"=sum(distance, na.rm=T))
+tmp3 <- tmp2 %>% group_by(local_identifier) %>% summarize(nobs=n(), "max_distance"=max(distance, na.rm=T), "avg_distance"=mean(distance, na.rm=T), "distance"=sum(distance, na.rm=T))
 
-tmp_check <- tmp3[tmp3$max_distance<100,]$local_identifier
+tmp_check <- tmp3[tmp3$max_distance<100 & tmp3$nobs>10,]$local_identifier
 if(length(tmp_check)>0)
 {
   warnings[[counter]] <- data.frame(name=tmp_check,reason="Maximum movement step < 100m")
   counter <- counter+1
 }
 
-tmp_check <- tmp3[tmp3$distance<5000,]$local_identifier
+tmp_check <- tmp3[tmp3$distance<5000 & tmp3$nobs>10,]$local_identifier
 
 if(length(tmp_check)>0)
 {
@@ -213,7 +220,150 @@ if(length(tmp_check)>0)
 warnings <- bind_rows(warnings)
 check_in_concern <- bind_rows(check_in_concern)
 
+##########################################################
+##########################################################
+# MAMMALS
+
+# Add distance moved
+mammal_dat$distance <- unlist(lapply(distance(mammal_dat), c, NA))
+
+# Convert move stack to dataframe
+dat <- as.data.frame(mammal_dat)
+
+# Last week
+mammal_dat_168 <- mammal_dat[mammal_dat$timestamp > t-as.difftime(7,units='days'),]
+dat_168 <- as.data.frame(mammal_dat_168)
+tmp <- as.data.frame(table(dat_168$local_identifier))
+
+dist_168<- distance(mammal_dat_168)
+dist_168<- as.data.frame((sapply(dist_168,sum)))
+dist_168$name <- row.names(dist_168)
+colnames(dist_168)[1] <- "dist_km_last_168h"
+dist_168$dist_km_last_168h <- round(dist_168$dist_km_last_168h/1000,1)
+# Filte rout individuals with only one record
+dist_168 <- dist_168[dist_168$name %in% tmp$Var1[tmp$Freq>10],]
+
+# Convert dat to costa rica time
+dat$timestamp <- with_tz(dat$timestamp, tzone = "America/Costa_Rica")
+
+# Add the location data
+#dat <- left_join(dat, mammals[, c("tag_id", "animalName")])
+# Sort the names out
+
+dat$animalName <- dat$local_identifier
+# Add in the taxonomic group
+
+mammals$timestamp_start <- ymd_hms(mammals$timestamp_start)
+mammals$timestamp_end <- ymd_hms(mammals$timestamp_end)
+
+
+
+# Add a country column
+dat$country <- dat$location_lat<0
+dat$country[dat$country==T] <- "peru"
+dat$country[dat$country==F] <- "costa_rica"
+#table(dat$country)
+
+# What speed is flying
+
+# Last location and time since present
+dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
+
+last_obs <- dat %>% group_by(animalName) %>% summarize(hours_since_fix=min(diff_time))
+
+last_dat <- dat %>% group_by(animalName) %>% filter(row_number()==n())
+
+last_sum  <- dat %>% 
+  group_by(local_identifier) %>%
+  slice(which.max(timestamp))
+
+tmp <- last_sum[, c("local_identifier","taxon_canonical_name","country", "timestamp", "diff_time")]
+
+colnames(tmp)[colnames(tmp)=="local_identifier"] <- "name"
+colnames(tmp)[colnames(tmp)=="diff_time"] <- "time_since_checkin_h"
+colnames(tmp)[colnames(tmp)=="timestamp"] <- "last_timestamp"
+
+mammal_summary <- tmp[order(tmp$country, tmp$time_since_checkin_h),]
+
+# add distance move last_168
+mammal_summary <- left_join(mammal_summary, dist_168)
+
+### Add additional data shown later
+mammal_summary$duration <- difftime(mammal_summary$last_timestamp, start_tapir, "days")
+
+### Total locations Mean eobs battery power, eobs accuracy
+tmp_sum <- dat %>% group_by(local_identifier) %>% summarise(total_obs=n())
+colnames(tmp_sum)[1] <- "name"
+
+mammal_summary <- left_join(mammal_summary, tmp_sum)
+mammal_summary$mean_locs_per_day <- round(mammal_summary$total_obs/as.numeric(mammal_summary$duration),0)
+
+#### Tags to be checked
+
+# warnings <- list()
+# check_in_concern <- list()
+# counter <- 1
+# # Tags which have haven't checked in > 8 days, OR maximum distance moved between intervals < 100m for the last 100 fixes or total distance moved in last 100 fixes <5000m
+# tmp_check  <- check_in_summary[check_in_summary$time_since_checkin_h>(96*2) & is.na(check_in_summary$dist_km_last_168h)==T & check_in_summary$total_obs>10,]$name
+# 
+# if(length(tmp_check)>0)
+# {
+#   check_in_concern[[1]] <- data.frame(name=tmp_check,reason="Last checkin > 8 days ago")
+#  
+# }
+# 
+# tmp2 <- dat %>% 
+#    group_by(local_identifier) %>% 
+#    slice(tail(row_number(), 100))
+# test <- tmp2[tmp2$local_identifier=="Ugalde",]
+# tmp3 <- tmp2 %>% group_by(local_identifier) %>% summarize(nobs=n(), "max_distance"=max(distance, na.rm=T), "avg_distance"=mean(distance, na.rm=T), "distance"=sum(distance, na.rm=T))
+# 
+# tmp_check <- tmp3[tmp3$max_distance<100 & tmp3$nobs>10,]$local_identifier
+# if(length(tmp_check)>0)
+# {
+#   warnings[[counter]] <- data.frame(name=tmp_check,reason="Maximum movement step < 100m")
+#   counter <- counter+1
+# }
+# 
+# tmp_check <- tmp3[tmp3$distance<5000 & tmp3$nobs>10,]$local_identifier
+# 
+# if(length(tmp_check)>0)
+# {
+#   warnings[[counter]] <- data.frame(name=tmp_check,reason="Avg. movement step < 50m")
+#   counter <- counter+1
+# }
+# 
+# warnings <- bind_rows(warnings)
+# check_in_concern <- bind_rows(check_in_concern)
+#check_in_summary
+
 ```
+
+For the current locations of all animals see: [Osa Conservation Daily Report](https://chrisbeirne.github.io/Osa-Conservation-Movement-Ecology-Daily-Report/last-locations.html)
+
+**MAMMAL COLLAR STATUS**
+
+Here is your automated summary of all the mammals which have checked in within the last 6 weeks:
+
+```{r mammals, echo=F}
+
+
+# Round the time since checkin
+mammal_summary$time_since_checkin_h <- round(mammal_summary$time_since_checkin_h,0)
+colnames(mammal_summary)[colnames(mammal_summary)=="dist_km_last_168h"] <- "dist_last_7days_km"
+# Convert time to days
+mammal_summary$days_since_checkin <- round(mammal_summary$time_since_checkin_h/24,0)
+
+mammal_summary[,c("name","taxon_canonical_name","country","days_since_checkin","dist_last_7days_km","mean_locs_per_day")] %>%
+  kbl() %>%
+  kable_styling() %>% 
+  column_spec (1:6,border_left = F, border_right = T) %>%
+  column_spec(4, color = "white",
+              background = spec_color(mammal_summary$days_since_checkin, begin=0,end = 0.7, scale_from = c(0,50), direction=-1)) 
+
+```
+
+**VULTURE TAG STATUS**
 
 **DEATH ALERTS**
 The following list shows tags which have hit one of two criteria:
@@ -229,22 +379,22 @@ The following tags have not checked in for >8 days (which may be a sign of an is
 
 **Tag summaries**
 
-Here is your automated summary of all the tracked animals which have checked in within the last 14 days:
+Here is your automated summary of all the tracked animals which have checked in within the last 2 weeks:
 
 ```{r cars, echo=F}
 tmp_col <- check_in_summary$time_since_checkin_h
 tmp_col[tmp_col<12]<- 12
 
-tmp_col3 <- check_in_summary$dist_km_last_24h
+tmp_col3 <- check_in_summary$dist_km_last_72h
 # what to do with NA;s
 tmp_col3[is.na(tmp_col3)] <- 100 
 
-check_in_summary[,c("name","taxon_canonical_name","country","time_since_checkin_h","behaviour","dist_km_last_24h","mean_locs_per_day", "last_battery_level" )] %>%
+check_in_summary[,c("name","taxon_canonical_name","country","time_since_checkin_h","behaviour","dist_km_last_72h","mean_locs_per_day", "last_battery_level" )] %>%
   kbl() %>%
   kable_styling() %>% 
   column_spec (1:7,border_left = F, border_right = T) %>%
   column_spec(4, color = "white",
-              background = spec_color(tmp_col, begin=0,end = 0.7, scale_from = c(12,72), direction=-1)) %>% 
+              background = spec_color(tmp_col, begin=0,end = 0.7, scale_from = c(12,300), direction=-1)) %>% 
   column_spec(6, background = ifelse(tmp_col3>0.5, "white", "#fec44f")) %>% 
   column_spec(8, background = ifelse(tmp_col3<3600, "white", "#fec44f"))
 
@@ -254,10 +404,12 @@ check_in_summary[,c("name","taxon_canonical_name","country","time_since_checkin_
 
 For the current locations of all animals see: [Osa Conservation Daily Report](https://chrisbeirne.github.io/Osa-Conservation-Movement-Ecology-Daily-Report/)
 
-Tagged animals which have not checked in for >14 days:
+Tagged animals which have not checked in recently:
 
 ```{r  c05, echo=F}
-tmp2 <- animals[!(animals$local_identifier %in% tmp$name),]
+
+tmp2 <- rbind(animals, mammals)
+
 tmp2$timestamp_end <- with_tz(tmp2$timestamp_end, tzone = "America/Costa_Rica")
 #str(tmp2)
 tmp2$days_since_check_in<- round(as.numeric(difftime(t, tmp2$timestamp_end, units="days")),1)
@@ -265,127 +417,12 @@ tmp2 <- tmp2[order(tmp2$days_since_check_in),]
 #row.names(tmp2) <- 1:nrow(tmp2)
 colnames(tmp2)[colnames(tmp2)=="local_identifier"] <- "name"
 
-tmp2[, c("name", "timestamp_end", "days_since_check_in")] %>%
+tmp2 <- tmp2[tmp2$days_since_check_in>14,]
+
+tmp2[, c("name", "taxon_canonical_name", "days_since_check_in")] %>%
   kbl(row.names = FALSE) %>%
   kable_styling() %>% 
   column_spec (1:3,border_left = F, border_right = T) 
 
 ```
 
-For the current locations of all animals see: [Osa Conservation Daily Report](https://chrisbeirne.github.io/Osa-Conservation-Movement-Ecology-Daily-Report/)
-
-**Ecuadorian Birds**
-
-```{r ecu1, include=FALSE}
-
-
-# Get animals
-ec_animals <-getMovebankAnimals(study=2885579493,login=loginStored)
-ec_animals$local_identifier <- ec_animals$nick_name
-
-# They vary by the field "sensor_type_id"
-ec_animals <- ec_animals[ec_animals$sensor_type_id==653 & is.na(ec_animals$sensor_type_id)==F,]
-
-# Get last 2 weeks
-t <- now("America/Costa_Rica")
-start_t <- t-as.difftime(14,units='days')
-
-mov_dat <- getMovebankData(study=2885579493, login=loginStored,  removeDuplicatedTimestamps=TRUE,
-                       timestamp_start=start_t)
-
-# Add distance moved
-mov_dat$distance <- unlist(lapply(distance(mov_dat), c, NA))
-# all data
-#dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE)
-
-# Convert move stack to dataframe
-dat <- as.data.frame(mov_dat)
-dat$local_identifier <-  dat$nick_name
-table(dat$local_identifier)
-# Last 24 hours
-mov_dat_24 <- mov_dat[mov_dat$timestamp > t-as.difftime(1,units='days'),]
-dat_24 <- as.data.frame(mov_dat_24)
-table(dat_24$nick_name)
-
-dist_24<- distance(mov_dat_24)
-names(dist_24) <- mov_dat_24@idData$nick_name
-#str(mov_dat_24)
-dist_24<- as.data.frame((sapply(dist_24,sum)))
-dist_24$local_identifier <- row.names(dist_24)
-colnames(dist_24)[1] <- "dist_km_last_24h"
-dist_24$dist_km_last_24h <- round(dist_24$dist_km_last_24h/1000,1)
-
-# Convert dat to Ecuador time
-dat$timestamp <- with_tz(dat$timestamp, tzone = "America/Guayaquil")
-
-# Add the location data
-dat <- left_join(dat, ec_animals[, c("tag_id", "local_identifier")])
-# Sort the names out
-
-ec_animals$timestamp_start <- ymd_hms(ec_animals$timestamp_start)
-ec_animals$timestamp_end <- ymd_hms(ec_animals$timestamp_end)
-
-# Add a country column
-dat$country <- dat$location_lat<0
-dat$country[dat$country==T] <- "Ecuador"
-
-# What speed is flying
-
-# Last location and time since present
-dat$diff_time <- round(as.numeric(difftime(t, dat$timestamp, units="hours")),1)
-
-last_obs <- dat %>% group_by(local_identifier) %>% summarize(hours_since_fix=min(diff_time))
-
-last_dat <- dat %>% group_by(local_identifier) %>% filter(row_number()==n())
-
-last_sum  <- dat %>% 
-  group_by(local_identifier) %>%
-  slice(which.max(timestamp))
-last_sum$behaviour <- NA
-last_sum$behaviour[last_sum$ground_speed>5 & is.na(last_sum$ground_speed)==F] <- "flying"
-last_sum$behaviour[last_sum$ground_speed<5 & is.na(last_sum$ground_speed)==F] <- "roosting"
-
-tmp <- last_sum[, c("local_identifier","taxon_canonical_name","country", "timestamp", "diff_time", "behaviour")]
-tmp <- left_join(tmp, last_dat[, c("local_identifier", "eobs_battery_voltage")])
-
-colnames(tmp)[colnames(tmp)=="local_identifier"] <- "name"
-colnames(tmp)[colnames(tmp)=="diff_time"] <- "time_since_checkin_h"
-colnames(tmp)[colnames(tmp)=="timestamp"] <- "last_timestamp"
-colnames(tmp)[colnames(tmp)=="eobs_battery_voltage"] <- "last_battery_level"
-
-check_in_summary <- tmp[order(tmp$country, tmp$time_since_checkin_h),]
-
-# add distance move last_24
-check_in_summary <- left_join(check_in_summary, dist_24, by=c("name"="local_identifier"))
-
-### Add additional data shown later
-check_in_summary$duration <- difftime(check_in_summary$last_timestamp, start_t, "days")
-
-### Total locations Mean eobs battery power, eobs accuracy
-tmp_sum <- dat %>% group_by(local_identifier) %>% summarise(total_obs=n(), mean_batt=mean(eobs_battery_voltage, na.rm=T), loc_accuracy=mean(eobs_horizontal_accuracy_estimate, na.rm=T))
-colnames(tmp_sum)[1] <- "name"
-
-check_in_summary <- left_join(check_in_summary, tmp_sum)
-check_in_summary$mean_locs_per_day <- round(check_in_summary$total_obs/as.numeric(check_in_summary$duration),0)
-
-```
-
-
-```{r ecu2, echo=F}
-tmp_col <- check_in_summary$time_since_checkin_h
-tmp_col[tmp_col<12]<- 12
-
-tmp_col3 <- check_in_summary$dist_km_last_24h
-# what to do with NA;s
-tmp_col3[is.na(tmp_col3)] <- 100 
-
-check_in_summary[,c("name","taxon_canonical_name","country","time_since_checkin_h","behaviour","dist_km_last_24h","mean_locs_per_day", "last_battery_level" )] %>%
-  kbl() %>%
-  kable_styling() %>% 
-  column_spec (1:7,border_left = F, border_right = T) %>%
-  column_spec(4, color = "white",
-              background = spec_color(tmp_col, begin=0,end = 0.7, scale_from = c(12,72), direction=-1)) %>% 
-  column_spec(6, background = ifelse(tmp_col3>0.5, "white", "#fec44f")) %>% 
-  column_spec(8, background = ifelse(tmp_col3<3600, "white", "#fec44f"))
-
-```

@@ -6,7 +6,7 @@ on:
 jobs:
   bookdown:
     name: Render-Report-Send-Email
-    runs-on: macos-11 # macos-latest # ubuntu-latest #  macos USES 10 TIMES THE MINUTES
+    runs-on: macos-latest # ubuntu-latest #  macos USES 10 TIMES THE MINUTES
     steps: 
       - uses: actions/checkout@v2
       # More detail here, https://github.com/r-lib/actions
@@ -54,7 +54,7 @@ jobs:
           MOVEBANK_USERNAME: ${{ secrets.MOVEBANK_USERNAME }}
           MOVEBANK_PASSWORD: ${{ secrets.MOVEBANK_PASSWORD }}
         run: Rscript -e 'rmarkdown::render("index.Rmd")'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: index.html
           path: index.html
