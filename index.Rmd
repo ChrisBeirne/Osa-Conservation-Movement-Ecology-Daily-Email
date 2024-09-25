@@ -58,7 +58,9 @@ animals <- animals[animals$sensor_type_id==653 & is.na(animals$sensor_type_id)==
 t <- now("America/Costa_Rica")
 start_t <- t-as.difftime(14,units='days')
 
-start_tapir <- t-as.difftime(42,units='days')
+start_mammals <- t-as.difftime(42,units='days')
+
+start_tapir <- t-as.difftime(70,units='days')
 
 
 mov_dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicatedTimestamps=TRUE,
@@ -73,7 +75,7 @@ tmp2 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTi
 
 # Carnivores
 tmp3 <- getMovebankData(study=2957292408, login=loginStored,  #removeDuplicatedTimestamps=TRUE,
-                       timestamp_start=start_tapir)
+                       timestamp_start=start_mammals)
 
 mov_dat <- moveStack(mov_dat)
 
