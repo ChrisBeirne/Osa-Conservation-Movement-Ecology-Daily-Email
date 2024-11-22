@@ -39,13 +39,13 @@ animals <-getMovebankAnimals(study=1573471517,login=loginStored)
 #tmp <-getMovebankAnimals(study=2526574641,login=loginStored)
 
 # Tapir
-tmp2 <- getMovebankAnimals(study=1954804459,login=loginStored)
+#tmp2 <- getMovebankAnimals(study=1954804459,login=loginStored)
 
 # Carnivores
 tmp3 <- getMovebankAnimals(study=2957292408,login=loginStored)
 
                 
-mammals <- rbind(tmp2, 
+mammals <- rbind(#tmp2, 
                  tmp3)
 
 
@@ -70,8 +70,8 @@ mov_dat <- getMovebankData(study=1573471517, login=loginStored,  removeDuplicate
 #tmp <- getMovebankData(study=2526574641, login=loginStored,  removeDuplicatedTimestamps=TRUE)
 
 #Tapir
-tmp2 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE,
-                       timestamp_start=start_tapir)
+#tmp2 <- getMovebankData(study=1954804459, login=loginStored,  removeDuplicatedTimestamps=TRUE,
+                      # timestamp_start=start_tapir)
 
 # Carnivores
 tmp3 <- getMovebankData(study=2957292408, login=loginStored,  #removeDuplicatedTimestamps=TRUE,
@@ -79,7 +79,7 @@ tmp3 <- getMovebankData(study=2957292408, login=loginStored,  #removeDuplicatedT
 
 mov_dat <- moveStack(mov_dat)
 
-mammal_dat <- moveStack(tmp2, 
+mammal_dat <- moveStack(#tmp2, 
                      tmp3)
 
 
